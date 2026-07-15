@@ -96,14 +96,14 @@ export default function EntryForm({ onAdd, onUpdate, editingEntry, onCancelEdit 
       </div>
 
       <div className="mt-4 space-y-4">
-        <div>
+        <div className="flex flex-col">
           <label className="block text-sm font-medium text-slate-600">Date</label>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
-            className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="mt-1 w-full min-w-0 rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
           />
         </div>
 
