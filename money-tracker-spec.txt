@@ -1,0 +1,73 @@
+PROJECT: Shared Expense Tracker (2 people)
+
+GOAL
+A simple, mobile-friendly personal website to track money paid between two
+people (e.g. me and my partner), overseas-friendly (works on phone browsers,
+no accounts/login needed for either person). I want to design the frontend
+myself, so keep the code clean, modular, and easy for me to restyle.
+
+HOSTING / DATA ARCHITECTURE
+- Frontend: static site (HTML/CSS/JS), hosted on GitHub Pages.
+- Data storage: a Google Sheet, accessed via a Google Apps Script "Web App"
+  that acts as a simple API (no traditional backend server, no database to
+  manage myself).
+- Flow: the frontend calls the Apps Script Web App URL with fetch() to read
+  existing entries (GET) and add new entries (POST). The Apps Script writes/
+  reads rows in the Google Sheet.
+
+CORE FEATURE (KEEP IT SIMPLE)
+Just one function: log who paid for what.
+
+Each entry needs:
+- Date
+- Description (what it was for)
+- Amount
+- Paid by (dropdown/toggle: "Me" or "Partner" — should be easy to relabel
+  with actual names later)
+
+Display:
+- A running list of all entries (most recent first is fine).
+- A summary at the top showing total paid by each person, and the net
+  balance ("Partner owes you $X" or "You owe Partner $X").
+
+NOT NEEDED (explicitly out of scope for now)
+- No user accounts / login / auth.
+- No complex split logic (percentages, multi-currency conversion, etc.) —
+  just a flat amount per entry, assume the same currency throughout for now.
+- No offline write queue / service worker sync logic for v1 — that's a nice-
+  to-have for later, not required now.
+- No React/build tooling needed unless it makes the styling work easier —
+  plain HTML/CSS/JS is fine, but open to a lightweight framework if it helps
+  with mobile-friendly design.
+
+WHAT I NEED HELP WITH
+1. The Google Apps Script code (doGet + doPost) that:
+   - Reads all rows from the linked Google Sheet and returns them as JSON.
+   - Appends a new row when it receives a POST with date, description,
+     amount, and paid_by.
+   - Includes clear deployment instructions (Extensions > Apps Script,
+     deploy as Web App, access: Anyone, get the /exec URL).
+2. A Google Sheet structure/template to match (column headers etc).
+3. A starter frontend (index.html + any CSS/JS files) that:
+   - Has a simple form to add an entry (date, description, amount, paid by).
+   - Fetches and displays existing entries from the Apps Script URL on load.
+   - Calculates and displays the running balance between the two people.
+   - Is mobile-friendly (responsive layout, big tap targets, works well on
+     a phone browser).
+   - Is structured with clean, separated CSS so I can restyle it myself
+     easily (I want to design the look and feel on my own).
+4. Basic instructions for deploying the frontend on GitHub Pages (repo
+   setup, enabling Pages, where the Apps Script URL goes in the code so I
+   can swap in my own).
+
+MOBILE / OFFLINE NOTES
+- Should look and work well as a mobile web page (this is the primary use
+  case — checking/adding entries from a phone).
+- True offline support is NOT required for v1, but keep the code loosely
+  structured enough that adding a service worker + offline queue later
+  wouldn't require a rewrite.
+
+DELIVERABLE
+A working skeleton I can open in a browser and start customizing the design
+of, with the Google Sheet as the live data source, deployable via GitHub
+Pages.
