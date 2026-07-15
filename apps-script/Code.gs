@@ -1,7 +1,7 @@
 // Google Apps Script Web App backend for the Money Tracker.
 // Deploy this bound to a Google Sheet with a tab named "Entries" whose
 // columns are, in order:
-// Date | Description | Amount | PaidBy | Category | Id | Owed
+// Date | Description | Amount | PaidBy | Category | Id | Owed | Currency | Rate
 // See README.md for full setup + deployment steps.
 
 const SHEET_NAME = 'Entries';
@@ -57,6 +57,8 @@ function doGet(e) {
       category: r[4] || 'other',
       id: r[5] || '',
       owedAmount: Number(r[6]) || 0,
+      currency: r[7] || 'JPY',
+      rate: r[8] !== '' ? Number(r[8]) : null,
     }));
 
   return jsonOutput({ entries });
@@ -79,7 +81,7 @@ function doPost(e) {
       }
       const id = Utilities.getUuid();
       const row = sheet.getLastRow() + 1;
-      const range = sheet.getRange(row, 1, 1, 7);
+      const range = sheet.getRange(row, 1, 1, 9);
       // Force plain-text format so the date string is stored exactly as
       // sent, instead of Sheets auto-converting it to a date serial (which
       // can shift by a day once re-read through a timezone).
@@ -92,6 +94,8 @@ function doPost(e) {
         body.category || 'other',
         id,
         Number(body.owedAmount) || 0,
+        body.currency || 'JPY',
+        body.rate ? Number(body.rate) : '',
       ]]);
       return jsonOutput({ success: true, id });
     }
@@ -110,6 +114,8 @@ function doPost(e) {
         body.category || 'other',
       ]]);
       sheet.getRange(row, 7, 1, 1).setValue(Number(body.owedAmount) || 0);
+      sheet.getRange(row, 8, 1, 1).setValue(body.currency || 'JPY');
+      sheet.getRange(row, 9, 1, 1).setValue(body.rate ? Number(body.rate) : '');
       return jsonOutput({ success: true });
     }
 

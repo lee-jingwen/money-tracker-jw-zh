@@ -32,16 +32,16 @@ async function postAction(body, fallbackError) {
   return data
 }
 
-export function addEntry({ date, description, amount, paidBy, category, owedAmount }) {
+export function addEntry({ date, description, amount, currency, rate, paidBy, category, owedAmount }) {
   return postAction(
-    { action: 'add', date, description, amount, paidBy, category, owedAmount },
+    { action: 'add', date, description, amount, currency, rate, paidBy, category, owedAmount },
     'Failed to add entry',
   )
 }
 
-export function updateEntry({ id, date, description, amount, paidBy, category, owedAmount }) {
+export function updateEntry({ id, date, description, amount, currency, rate, paidBy, category, owedAmount }) {
   return postAction(
-    { action: 'update', id, date, description, amount, paidBy, category, owedAmount },
+    { action: 'update', id, date, description, amount, currency, rate, paidBy, category, owedAmount },
     'Failed to update entry',
   )
 }

@@ -8,6 +8,10 @@ export default function SwipeableRow({ children, onEdit, onDelete }) {
   const drag = useRef({ startX: 0, startOffset: 0, moved: false })
 
   function handlePointerDown(e) {
+    // Let buttons inside the row (e.g. "Mark as paid") handle their own
+    // clicks — capturing the pointer here would reroute their click event
+    // to this row instead.
+    if (e.target.closest('button')) return
     drag.current = { startX: e.clientX, startOffset: x, moved: false }
     setDragging(true)
     e.currentTarget.setPointerCapture(e.pointerId)

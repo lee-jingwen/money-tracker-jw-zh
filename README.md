@@ -8,9 +8,10 @@ Tailwind frontend on GitHub Pages, Google Sheet + Apps Script as the backend
 
 1. Create a new Google Sheet.
 2. Rename the first tab to `Entries` (must match exactly).
-3. Add a header row: `Date | Description | Amount | PaidBy | Category | Id | Owed`
+3. Add a header row: `Date | Description | Amount | PaidBy | Category | Id | Owed | Currency | Rate`
    (`Id` and `Owed` are filled in automatically by the script — you never
-   type into them yourself).
+   type into them yourself; `Rate` is an optional conversion rate you can
+   log per entry).
 4. Open **Extensions > Apps Script**.
 5. Delete any starter code, then paste in the contents of
    [`apps-script/Code.gs`](apps-script/Code.gs) from this repo.
@@ -21,8 +22,8 @@ Tailwind frontend on GitHub Pages, Google Sheet + Apps Script as the backend
 7. Click **Deploy**, authorize when prompted, and copy the resulting URL
    (ends in `/exec`). This is your API endpoint.
 
-If you already had a deployment from before `Id`/`Owed` existed: add the two
-new header columns, paste in the updated `Code.gs`, then use
+If you already had a deployment from before `Id`/`Owed`/`Currency`/`Rate`
+existed: add the missing header column(s), paste in the updated `Code.gs`, then use
 **Deploy > Manage deployments** → edit your existing deployment → **New
 version** → **Deploy**. This keeps the same URL, so `src/config.js` doesn't
 need to change.
@@ -30,6 +31,11 @@ need to change.
 > Entries added before the `Id` column existed won't have an id and so can't
 > be edited/deleted from the app (they'll still display fine). Either delete
 > those rows or manually paste a unique value into their `Id` cell.
+
+> Entries added before the `Currency` column existed will display as JPY
+> (the app's default) since the cell is blank. Manually paste `JPY` or `SGD`
+> into old rows' `Currency` cell if any of them were actually logged in the
+> other currency.
 
 ### Set your passcode
 

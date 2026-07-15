@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { getEntries, addEntry, updateEntry, deleteEntry } from './api'
 import { getStoredPasscode, setStoredPasscode, clearStoredPasscode } from './auth'
+import { BOTH, DEFAULT_CURRENCY } from './config'
 import LockScreen from './components/LockScreen'
 import BalanceSummary from './components/BalanceSummary'
 import CategoryBreakdown from './components/CategoryBreakdown'
+import AllCategories from './components/AllCategories'
 import EntryForm from './components/EntryForm'
 import EntryList from './components/EntryList'
 
@@ -13,6 +15,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [tab, setTab] = useState('add')
   const [editingEntry, setEditingEntry] = useState(null)
+  const [activeCurrency, setActiveCurrency] = useState(DEFAULT_CURRENCY)
 
   const [checkingPasscode, setCheckingPasscode] = useState(true)
   const [unlocked, setUnlocked] = useState(false)
@@ -93,6 +96,38 @@ export default function App() {
     }
   }
 
+  // Resolving a debt is economically the same as if both people had paid
+  // their actual share from the start. A half-split entry flips to a
+  // single "Both" entry (which is what actually drives each person's paid
+  // total). An uneven (custom) split can't be represented by one entry
+  // with a single paidBy, so it's settled by shrinking the original entry
+  // down to what the payer ultimately kept bearing, and creating a new
+  // entry for the amount the other person reimbursed — credited to them.
+  async function handleResolve(entry) {
+    if (!window.confirm('Mark this debt as paid?')) return
+
+    const amount = Number(entry.amount)
+    const owed = Number(entry.owedAmount) || 0
+    const wasHalf = Math.abs(owed - amount / 2) < 0.01
+
+    if (wasHalf) {
+      return handleUpdate({ ...entry, owedAmount: 0, paidBy: BOTH })
+    }
+
+    const owerKey = entry.paidBy === 'A' ? 'B' : 'A'
+    await handleUpdate({ ...entry, amount: amount - owed, owedAmount: 0 })
+    await handleAdd({
+      date: entry.date,
+      description: entry.description,
+      amount: owed,
+      currency: entry.currency,
+      rate: entry.rate,
+      paidBy: owerKey,
+      category: entry.category,
+      owedAmount: 0,
+    })
+  }
+
   async function handleDelete(id) {
     if (!window.confirm('Delete this entry?')) return
     try {
@@ -140,29 +175,31 @@ export default function App() {
           </button>
         </header>
 
-        <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1">
-          <button
-            type="button"
-            onClick={() => setTab('add')}
-            className={`rounded-xl py-2.5 text-sm font-semibold transition-colors ${
-              tab === 'add' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
-            }`}
-          >
-            Add Entry
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingEntry(null)
-              setTab('view')
-            }}
-            className={`rounded-xl py-2.5 text-sm font-semibold transition-colors ${
-              tab === 'view' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
-            }`}
-          >
-            View Entries
-          </button>
-        </div>
+        {tab !== 'categories' && (
+          <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1">
+            <button
+              type="button"
+              onClick={() => setTab('add')}
+              className={`rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+                tab === 'add' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
+              }`}
+            >
+              Add Entry
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEntry(null)
+                setTab('view')
+              }}
+              className={`rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+                tab === 'view' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
+              }`}
+            >
+              View Entries
+            </button>
+          </div>
+        )}
 
         <div className="space-y-5">
           {error && (
@@ -178,15 +215,26 @@ export default function App() {
               editingEntry={editingEntry}
               onCancelEdit={cancelEdit}
             />
+          ) : tab === 'categories' ? (
+            <AllCategories entries={entries} currency={activeCurrency} onBack={() => setTab('view')} />
           ) : loading ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-400">
               Loading…
             </div>
           ) : (
             <>
-              <BalanceSummary entries={entries} />
-              <CategoryBreakdown entries={entries} />
-              <EntryList entries={entries} onEdit={startEdit} onDelete={handleDelete} />
+              <BalanceSummary entries={entries} onActiveCurrencyChange={setActiveCurrency} />
+              <CategoryBreakdown
+                entries={entries}
+                currency={activeCurrency}
+                onSeeAll={() => setTab('categories')}
+              />
+              <EntryList
+                entries={entries}
+                onEdit={startEdit}
+                onDelete={handleDelete}
+                onResolve={handleResolve}
+              />
             </>
           )}
         </div>

@@ -13,3 +13,12 @@ input[type='date'] {
   box-sizing: border-box;
   width: 100%;
 }
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

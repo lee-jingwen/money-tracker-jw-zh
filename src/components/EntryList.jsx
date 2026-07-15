@@ -1,19 +1,16 @@
-import { CATEGORIES, PEOPLE, BOTH, paidByLabel } from '../config'
+import { CATEGORIES, PEOPLE, BOTH, paidByLabel, currencySymbol, formatAmount, formatDate, DEFAULT_CURRENCY } from '../config'
 import SwipeableRow from './SwipeableRow'
-
-function formatDate(iso) {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
 
 function categoryEmoji(key) {
   return CATEGORIES.find((c) => c.key === key)?.emoji ?? CATEGORIES.at(-1).emoji
 }
 
-function EntryCard({ entry }) {
+function EntryCard({ entry, onResolve }) {
   const owedAmount = Number(entry.owedAmount) || 0
   const owerLabel = entry.paidBy === 'A' ? PEOPLE.B : PEOPLE.A
+  const symbol = currencySymbol(entry.currency || DEFAULT_CURRENCY)
+  const rate = Number(entry.rate) || 0
+  const sgdEquivalent = entry.currency === 'JPY' && rate > 0 ? Number(entry.amount) / rate : null
 
   return (
     <div className="flex items-center justify-between bg-white p-4">
@@ -21,16 +18,32 @@ function EntryCard({ entry }) {
         <span className="text-xl leading-none">{categoryEmoji(entry.category)}</span>
         <div className="min-w-0">
           <p className="truncate font-medium text-slate-800">{entry.description}</p>
-          <p className="text-sm text-slate-400">{formatDate(entry.date)}</p>
+          <p className="truncate text-xs text-slate-400">
+            {formatDate(entry.date)}
+            {sgdEquivalent !== null && (
+              <> · ≈ {currencySymbol('SGD')}{formatAmount(sgdEquivalent)} (@ {rate})</>
+            )}
+          </p>
           {entry.paidBy !== BOTH && owedAmount > 0 && (
-            <p className="text-xs text-slate-400">
-              {owerLabel} owes ${owedAmount.toFixed(2)}
-            </p>
+            <div className="mt-0.5 flex items-center gap-2">
+              <p className="text-xs text-slate-400">
+                {owerLabel} owes {symbol}{formatAmount(owedAmount)}
+              </p>
+              {entry.id && (
+                <button
+                  type="button"
+                  onClick={() => onResolve(entry)}
+                  className="text-xs font-medium text-indigo-500 hover:text-indigo-600"
+                >
+                  Mark as paid
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end pl-3">
-        <p className="font-semibold text-slate-800">${Number(entry.amount).toFixed(2)}</p>
+        <p className="font-semibold text-slate-800">{symbol}{formatAmount(entry.amount)}</p>
         <span
           className={`mt-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
             entry.paidBy === 'A'
@@ -47,7 +60,7 @@ function EntryCard({ entry }) {
   )
 }
 
-export default function EntryList({ entries, onEdit, onDelete }) {
+export default function EntryList({ entries, onEdit, onDelete, onResolve }) {
   if (entries.length === 0) {
     return (
       <div className="rounded-3xl border border-dashed border-slate-300 bg-white/50 p-8 text-center">
@@ -66,7 +79,7 @@ export default function EntryList({ entries, onEdit, onDelete }) {
           entry.id ? (
             <li key={entry.id}>
               <SwipeableRow onEdit={() => onEdit(entry)} onDelete={() => onDelete(entry.id)}>
-                <EntryCard entry={entry} />
+                <EntryCard entry={entry} onResolve={onResolve} />
               </SwipeableRow>
             </li>
           ) : (
@@ -74,7 +87,7 @@ export default function EntryList({ entries, onEdit, onDelete }) {
               key={i}
               className="rounded-2xl border border-slate-200 bg-white shadow-sm"
             >
-              <EntryCard entry={entry} />
+              <EntryCard entry={entry} onResolve={onResolve} />
             </li>
           ),
         )}
