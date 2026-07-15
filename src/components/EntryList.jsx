@@ -18,14 +18,14 @@ function EntryCard({ entry, onResolve }) {
         <span className="text-xl leading-none">{categoryEmoji(entry.category)}</span>
         <div className="min-w-0">
           <p className="truncate font-medium text-slate-800">{entry.description}</p>
-          <p className="truncate text-xs text-slate-400">
+          <p className="text-xs text-slate-400">
             {formatDate(entry.date)}
             {sgdEquivalent !== null && (
               <> · ≈ {currencySymbol('SGD')}{formatAmount(sgdEquivalent)} (@ {rate})</>
             )}
           </p>
           {entry.paidBy !== BOTH && owedAmount > 0 && (
-            <div className="mt-0.5 flex items-center gap-2">
+            <div className="mt-0.5">
               <p className="text-xs text-slate-400">
                 {owerLabel} owes {symbol}{formatAmount(owedAmount)}
               </p>
@@ -33,7 +33,7 @@ function EntryCard({ entry, onResolve }) {
                 <button
                   type="button"
                   onClick={() => onResolve(entry)}
-                  className="text-xs font-medium text-indigo-500 hover:text-indigo-600"
+                  className="whitespace-nowrap text-xs font-medium text-indigo-500 hover:text-indigo-600"
                 >
                   Mark as paid
                 </button>
