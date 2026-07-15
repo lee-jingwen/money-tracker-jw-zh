@@ -64,6 +64,9 @@ export default function EntryForm({ onAdd, onUpdate, editingEntry, onCancelEdit 
         await onAdd(payload)
         setDescription('')
         setAmount('')
+        setPaidBy(BOTH)
+        setSplitMode('half')
+        setCustomOwed('')
       }
     } catch (err) {
       setError(err.message)

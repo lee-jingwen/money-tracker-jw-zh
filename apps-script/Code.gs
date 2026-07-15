@@ -7,6 +7,17 @@
 const SHEET_NAME = 'Entries';
 const ID_COL = 6; // column F
 
+// Shared passcode gate. This repo is public, so this file only ever holds
+// the placeholder below — change it to your real secret directly in the
+// Apps Script editor (Extensions > Apps Script), which lives on Google's
+// servers and is never pushed to git. Do NOT replace this placeholder here
+// and commit that change.
+const PASSCODE = 'CHANGE_ME';
+
+function isAuthorized(provided) {
+  return typeof provided === 'string' && provided.length > 0 && provided === PASSCODE;
+}
+
 function getSheet() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
 }
@@ -27,7 +38,11 @@ function findRowById(sheet, id) {
   return -1;
 }
 
-function doGet() {
+function doGet(e) {
+  if (!isAuthorized(e.parameter.passcode)) {
+    return jsonOutput({ error: 'unauthorized' });
+  }
+
   const sheet = getSheet();
   const rows = sheet.getDataRange().getValues();
   rows.shift(); // drop header row
@@ -51,6 +66,11 @@ function doPost(e) {
   try {
     const sheet = getSheet();
     const body = JSON.parse(e.postData.contents);
+
+    if (!isAuthorized(body.passcode)) {
+      return jsonOutput({ success: false, error: 'unauthorized' });
+    }
+
     const action = body.action || 'add';
 
     if (action === 'add') {

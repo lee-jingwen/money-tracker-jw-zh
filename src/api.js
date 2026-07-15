@@ -1,9 +1,18 @@
 import { APPS_SCRIPT_URL } from './config'
+import { getStoredPasscode } from './auth'
+
+function unauthorizedError() {
+  const err = new Error('Incorrect passcode')
+  err.unauthorized = true
+  return err
+}
 
 export async function getEntries() {
-  const res = await fetch(APPS_SCRIPT_URL)
+  const url = `${APPS_SCRIPT_URL}?passcode=${encodeURIComponent(getStoredPasscode())}`
+  const res = await fetch(url)
   if (!res.ok) throw new Error('Failed to load entries')
   const data = await res.json()
+  if (data.error === 'unauthorized') throw unauthorizedError()
   return data.entries
 }
 
@@ -14,10 +23,11 @@ async function postAction(body, fallbackError) {
   const res = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, passcode: getStoredPasscode() }),
   })
   if (!res.ok) throw new Error(fallbackError)
   const data = await res.json()
+  if (data.error === 'unauthorized') throw unauthorizedError()
   if (!data.success) throw new Error(data.error || fallbackError)
   return data
 }

@@ -31,6 +31,26 @@ need to change.
 > be edited/deleted from the app (they'll still display fine). Either delete
 > those rows or manually paste a unique value into their `Id` cell.
 
+### Set your passcode
+
+This repo (and the deployed frontend) is public, so anyone with the link
+could otherwise poke at it. `Code.gs` gates every request behind a shared
+passcode via the `PASSCODE` constant near the top of the file.
+
+**Important:** set your real passcode directly in the Apps Script editor —
+never replace the `CHANGE_ME` placeholder in this git repo and commit it,
+since that would publish your passcode to everyone. The Apps Script editor
+lives on Google's servers, completely separate from what's pushed to
+GitHub, so this is the one piece of the backend you edit only there.
+
+1. In the Apps Script editor, find `const PASSCODE = 'CHANGE_ME';`.
+2. Change `'CHANGE_ME'` to your own secret (share it with your partner
+   directly, not through the repo).
+3. **Deploy > Manage deployments** → edit → **New version** → **Deploy**.
+
+The frontend will prompt for this passcode on first visit (per browser) and
+remember it afterwards via `localStorage`.
+
 ## 2. Point the frontend at your Apps Script URL
 
 Open [`src/config.js`](src/config.js) and paste your URL:
