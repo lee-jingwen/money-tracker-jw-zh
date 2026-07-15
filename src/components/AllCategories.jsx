@@ -152,25 +152,23 @@ export default function AllCategories({ entries, currency, onBack }) {
                   <li key={e.id} className="flex items-center justify-between gap-2 text-xs">
                     <div className="min-w-0">
                       <p className="truncate font-medium text-slate-700">{e.description}</p>
-                      <div className="mt-0.5 flex items-center gap-1.5">
-                        <span className="truncate text-slate-400">
-                          {formatDate(e.date)}
-                          {sgdEquivalent !== null && (
-                            <> · ≈ {currencySymbol('SGD')}{formatAmount(sgdEquivalent)} (@ {rate})</>
-                          )}
-                        </span>
-                        <span
-                          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                            e.paidBy === 'A'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : e.paidBy === BOTH
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-blue-100 text-blue-700'
-                          }`}
-                        >
-                          {paidByLabel(e.paidBy)}
-                        </span>
-                      </div>
+                      <p className="mt-0.5 text-slate-400">
+                        {formatDate(e.date)}
+                        {sgdEquivalent !== null && (
+                          <> · <span className="whitespace-nowrap">≈ {currencySymbol('SGD')}{formatAmount(sgdEquivalent)} (@ {rate})</span></>
+                        )}
+                      </p>
+                      <span
+                        className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                          e.paidBy === 'A'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : e.paidBy === BOTH
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-blue-100 text-blue-700'
+                        }`}
+                      >
+                        {paidByLabel(e.paidBy)}
+                      </span>
                     </div>
                     <span className="shrink-0 font-medium text-slate-800">
                       {active.symbol}{formatAmount(share)}

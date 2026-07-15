@@ -21,7 +21,7 @@ function EntryCard({ entry, onResolve }) {
           <p className="text-xs text-slate-400">
             {formatDate(entry.date)}
             {sgdEquivalent !== null && (
-              <> · ≈ {currencySymbol('SGD')}{formatAmount(sgdEquivalent)} (@ {rate})</>
+              <> · <span className="whitespace-nowrap">≈ {currencySymbol('SGD')}{formatAmount(sgdEquivalent)} (@ {rate})</span></>
             )}
           </p>
           {entry.paidBy !== BOTH && owedAmount > 0 && (
