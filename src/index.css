@@ -4,10 +4,12 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* iOS Safari ignores width:100% on date inputs and sizes them to their
-   minimal content instead, unlike Android/Chrome. Force full width there. */
+/* iOS Safari's native date input chrome ignores width/box-sizing and can
+   overflow its container, unlike Android/Chrome. Strip the native
+   appearance so it behaves like a normal input. */
 input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
   box-sizing: border-box;
-  min-width: 100%;
-  -webkit-min-logical-width: 100%;
+  width: 100%;
 }
