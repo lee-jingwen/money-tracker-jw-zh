@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { PEOPLE, BOTH, CATEGORIES, CURRENCIES, DEFAULT_CURRENCY, paidByLabel, currencySymbol, formatAmount, formatDate } from '../config'
-import { categoryTotalsFor } from './CategoryBreakdown'
+import { categoryTotalsFor, personShare } from './CategoryBreakdown'
 
 function PersonAllCategories({ personKey, name, totals, symbol, selection, onSelectCategory }) {
   return (
@@ -143,9 +143,8 @@ export default function AllCategories({ entries, currency, onBack }) {
           ) : (
             <ul className="space-y-2.5">
               {matchingEntries.map((e) => {
-                // Matches the category total above: a person's share of a
-                // "Both" entry is half, not the full amount.
-                const share = e.paidBy === BOTH ? Number(e.amount) / 2 : Number(e.amount)
+                // Matches the category total above.
+                const share = personShare(e, selection.person)
                 const rate = Number(e.rate) || 0
                 const sgdEquivalent = e.currency === 'JPY' && rate > 0 ? share / rate : null
                 return (

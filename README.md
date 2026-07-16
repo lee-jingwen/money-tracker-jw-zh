@@ -12,21 +12,27 @@ Tailwind frontend on GitHub Pages, Google Sheet + Apps Script as the backend
    (`Id` and `Owed` are filled in automatically by the script — you never
    type into them yourself; `Rate` is an optional conversion rate you can
    log per entry).
-4. Open **Extensions > Apps Script**.
-5. Delete any starter code, then paste in the contents of
+4. Add a second tab named `Conversions` (for the Wallet feature — tracking
+   currency conversions like "500 SGD → JPY at rate 125.625" separately from
+   expenses). Add a header row: `Date | FromCurrency | FromAmount | ToCurrency | ToAmount | Rate | PaidBy | Id | Owed`
+   (`Id` and `Owed` are filled in automatically, same as `Entries`). This tab
+   is optional — the app works fine without it, the Wallet tab just has
+   nothing to show until it exists.
+6. Open **Extensions > Apps Script**.
+7. Delete any starter code, then paste in the contents of
    [`apps-script/Code.gs`](apps-script/Code.gs) from this repo.
-6. Click **Deploy > New deployment**.
+8. Click **Deploy > New deployment**.
    - Select type: **Web app**.
    - Execute as: **Me**.
    - Who has access: **Anyone**.
-7. Click **Deploy**, authorize when prompted, and copy the resulting URL
+9. Click **Deploy**, authorize when prompted, and copy the resulting URL
    (ends in `/exec`). This is your API endpoint.
 
-If you already had a deployment from before `Id`/`Owed`/`Currency`/`Rate`
-existed: add the missing header column(s), paste in the updated `Code.gs`, then use
-**Deploy > Manage deployments** → edit your existing deployment → **New
-version** → **Deploy**. This keeps the same URL, so `src/config.js` doesn't
-need to change.
+If you already had a deployment from before `Id`/`Owed`/`Currency`/`Rate`/
+`Conversions` existed: add the missing header column(s)/tab, paste in the
+updated `Code.gs`, then use **Deploy > Manage deployments** → edit your
+existing deployment → **New version** → **Deploy**. This keeps the same
+URL, so `src/config.js` doesn't need to change.
 
 > Entries added before the `Id` column existed won't have an id and so can't
 > be edited/deleted from the app (they'll still display fine). Either delete

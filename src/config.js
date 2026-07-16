@@ -26,10 +26,20 @@ export function currencySymbol(key) {
   return CURRENCIES.find((c) => c.key === key)?.symbol ?? key
 }
 
-// Formats an amount with thousands separators, e.g. 11111 -> "11,111.00".
+// The "other side" of a 2-currency conversion. With more than 2 currencies
+// configured this just picks the first different one.
+export function otherCurrency(key) {
+  return CURRENCIES.find((c) => c.key !== key)?.key ?? key
+}
+
+// Formats an amount with thousands separators, e.g. 11111.5 -> "11,111.50"
+// but 11111 -> "11,111" (no ".00" for whole numbers). Rounds to cents first
+// so float noise (e.g. a /2 split landing on 25000.000000000004) doesn't
+// get mistaken for "has cents" and grow a spurious ".00".
 export function formatAmount(amount) {
-  return Number(amount).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
+  const rounded = Math.round(Number(amount) * 100) / 100
+  return rounded.toLocaleString('en-US', {
+    minimumFractionDigits: Number.isInteger(rounded) ? 0 : 2,
     maximumFractionDigits: 2,
   })
 }
@@ -67,7 +77,6 @@ export const CATEGORIES = [
   { key: 'souvenirs', label: 'Souvenirs', emoji: '🎁', color: 'bg-pink-400', hex: '#f472b6' },
   { key: 'transport', label: 'Transport', emoji: '🚗', color: 'bg-sky-400', hex: '#38bdf8' },
   { key: 'accommodation', label: 'Stay', emoji: '🏨', color: 'bg-violet-400', hex: '#a78bfa' },
-  { key: 'groceries', label: 'Groceries', emoji: '🛒', color: 'bg-emerald-400', hex: '#34d399' },
   { key: 'entertainment', label: 'Fun', emoji: '🎉', color: 'bg-fuchsia-400', hex: '#e879f9' },
   { key: 'shopping', label: 'Shopping', emoji: '🛍️', color: 'bg-amber-400', hex: '#fbbf24' },
   { key: 'other', label: 'Other', emoji: '🧾', color: 'bg-slate-400', hex: '#94a3b8' },

@@ -1,19 +1,26 @@
 import { PEOPLE, BOTH, CATEGORIES, CURRENCIES, DEFAULT_CURRENCY, formatAmount } from '../config'
 
+// A person's share of an entry: the full amount if it's their own. A
+// settled "Both" entry (no debt) splits evenly. One with an outstanding
+// debt — owedAmount's sign marks who owes, see EntryForm/EntryList —
+// attributes the whole amount to whoever actually fronted it; the ower's
+// share only counts once "Mark as paid" clears the debt.
+export function personShare(entry, person) {
+  if (entry.paidBy === person) return Number(entry.amount)
+  if (entry.paidBy !== BOTH) return 0
+  const owed = Number(entry.owedAmount) || 0
+  if (owed === 0) return Number(entry.amount) / 2
+  const fronter = owed > 0 ? 'A' : 'B'
+  return person === fronter ? Number(entry.amount) : 0
+}
+
 export function categoryTotalsFor(entries, person, currency) {
   const totals = {}
   for (const e of entries) {
     if ((e.currency || DEFAULT_CURRENCY) !== currency) continue
+    if (e.paidBy !== person && e.paidBy !== BOTH) continue
 
-    // Mirrors the balance card's "paid" totals: who fronted the money for
-    // this category, not who ultimately owes what — `owedAmount` only
-    // ever feeds the separate "Net balance" / "owes" line.
-    let share = 0
-    if (e.paidBy === person) share = Number(e.amount)
-    else if (e.paidBy === BOTH) share = Number(e.amount) / 2
-    else continue
-
-    totals[e.category] = (totals[e.category] || 0) + share
+    totals[e.category] = (totals[e.category] || 0) + personShare(e, person)
   }
   return totals
 }

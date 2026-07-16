@@ -7,13 +7,13 @@ function unauthorizedError() {
   return err
 }
 
-export async function getEntries() {
+export async function fetchAll() {
   const url = `${APPS_SCRIPT_URL}?passcode=${encodeURIComponent(getStoredPasscode())}`
   const res = await fetch(url)
-  if (!res.ok) throw new Error('Failed to load entries')
+  if (!res.ok) throw new Error('Failed to load data')
   const data = await res.json()
   if (data.error === 'unauthorized') throw unauthorizedError()
-  return data.entries
+  return { entries: data.entries, conversions: data.conversions || [] }
 }
 
 // Sent as text/plain (not application/json) so the browser treats these as
@@ -48,4 +48,22 @@ export function updateEntry({ id, date, description, amount, currency, rate, pai
 
 export function deleteEntry(id) {
   return postAction({ action: 'delete', id }, 'Failed to delete entry')
+}
+
+export function addConversion({ date, fromCurrency, fromAmount, toCurrency, toAmount, rate, paidBy, owedAmount }) {
+  return postAction(
+    { action: 'addConversion', date, fromCurrency, fromAmount, toCurrency, toAmount, rate, paidBy, owedAmount },
+    'Failed to add conversion',
+  )
+}
+
+export function updateConversion({ id, date, fromCurrency, fromAmount, toCurrency, toAmount, rate, paidBy, owedAmount }) {
+  return postAction(
+    { action: 'updateConversion', id, date, fromCurrency, fromAmount, toCurrency, toAmount, rate, paidBy, owedAmount },
+    'Failed to update conversion',
+  )
+}
+
+export function deleteConversion(id) {
+  return postAction({ action: 'deleteConversion', id }, 'Failed to delete conversion')
 }

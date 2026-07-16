@@ -1,11 +1,19 @@
 // Google Apps Script Web App backend for the Money Tracker.
-// Deploy this bound to a Google Sheet with a tab named "Entries" whose
-// columns are, in order:
+// Deploy this bound to a Google Sheet with two tabs:
+//
+// "Entries" columns, in order:
 // Date | Description | Amount | PaidBy | Category | Id | Owed | Currency | Rate
+//
+// "Conversions" columns, in order:
+// Date | FromCurrency | FromAmount | ToCurrency | ToAmount | Rate | PaidBy | Id | Owed
+//
 // See README.md for full setup + deployment steps.
 
 const SHEET_NAME = 'Entries';
 const ID_COL = 6; // column F
+
+const CONVERSIONS_SHEET_NAME = 'Conversions';
+const CONVERSIONS_ID_COL = 8; // column H
 
 // Shared passcode gate. This repo is public, so this file only ever holds
 // the placeholder below — change it to your real secret directly in the
@@ -22,32 +30,34 @@ function getSheet() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
 }
 
+// Returns null if the tab hasn't been added yet, so older deployments keep
+// working (just with no conversions) until it's set up.
+function getConversionsSheet() {
+  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONVERSIONS_SHEET_NAME);
+}
+
 function jsonOutput(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Returns the 1-indexed sheet row for a given entry id, or -1 if not found.
-function findRowById(sheet, id) {
+// Returns the 1-indexed sheet row for a given id in idCol, or -1 if not found.
+function findRowById(sheet, idCol, id) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return -1;
-  const ids = sheet.getRange(2, ID_COL, lastRow - 1, 1).getValues();
+  const ids = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
   for (let i = 0; i < ids.length; i++) {
     if (ids[i][0] === id) return i + 2;
   }
   return -1;
 }
 
-function doGet(e) {
-  if (!isAuthorized(e.parameter.passcode)) {
-    return jsonOutput({ error: 'unauthorized' });
-  }
-
+function readEntries() {
   const sheet = getSheet();
   const rows = sheet.getDataRange().getValues();
   rows.shift(); // drop header row
 
-  const entries = rows
+  return rows
     .filter((r) => r[0] !== '')
     .map((r) => ({
       date: String(r[0]),
@@ -60,13 +70,39 @@ function doGet(e) {
       currency: r[7] || 'JPY',
       rate: r[8] !== '' ? Number(r[8]) : null,
     }));
+}
 
-  return jsonOutput({ entries });
+function readConversions() {
+  const sheet = getConversionsSheet();
+  if (!sheet) return [];
+  const rows = sheet.getDataRange().getValues();
+  rows.shift(); // drop header row
+
+  return rows
+    .filter((r) => r[0] !== '')
+    .map((r) => ({
+      date: String(r[0]),
+      fromCurrency: r[1],
+      fromAmount: Number(r[2]),
+      toCurrency: r[3],
+      toAmount: Number(r[4]),
+      rate: Number(r[5]),
+      paidBy: r[6],
+      id: r[7] || '',
+      owedAmount: Number(r[8]) || 0,
+    }));
+}
+
+function doGet(e) {
+  if (!isAuthorized(e.parameter.passcode)) {
+    return jsonOutput({ error: 'unauthorized' });
+  }
+
+  return jsonOutput({ entries: readEntries(), conversions: readConversions() });
 }
 
 function doPost(e) {
   try {
-    const sheet = getSheet();
     const body = JSON.parse(e.postData.contents);
 
     if (!isAuthorized(body.passcode)) {
@@ -76,6 +112,7 @@ function doPost(e) {
     const action = body.action || 'add';
 
     if (action === 'add') {
+      const sheet = getSheet();
       if (!body.date || !body.description || !body.amount || !body.paidBy) {
         return jsonOutput({ success: false, error: 'Missing required field' });
       }
@@ -101,8 +138,9 @@ function doPost(e) {
     }
 
     if (action === 'update') {
+      const sheet = getSheet();
       if (!body.id) return jsonOutput({ success: false, error: 'Missing id' });
-      const row = findRowById(sheet, body.id);
+      const row = findRowById(sheet, ID_COL, body.id);
       if (row === -1) return jsonOutput({ success: false, error: 'Entry not found' });
 
       sheet.getRange(row, 1, 1, 5).setNumberFormat('@');
@@ -120,9 +158,66 @@ function doPost(e) {
     }
 
     if (action === 'delete') {
+      const sheet = getSheet();
       if (!body.id) return jsonOutput({ success: false, error: 'Missing id' });
-      const row = findRowById(sheet, body.id);
+      const row = findRowById(sheet, ID_COL, body.id);
       if (row === -1) return jsonOutput({ success: false, error: 'Entry not found' });
+
+      sheet.deleteRow(row);
+      return jsonOutput({ success: true });
+    }
+
+    if (action === 'addConversion') {
+      const sheet = getConversionsSheet();
+      if (!sheet) return jsonOutput({ success: false, error: 'Conversions sheet not set up' });
+      if (!body.date || !body.fromCurrency || !body.fromAmount || !body.toCurrency || !body.toAmount || !body.paidBy) {
+        return jsonOutput({ success: false, error: 'Missing required field' });
+      }
+      const id = Utilities.getUuid();
+      const row = sheet.getLastRow() + 1;
+      const range = sheet.getRange(row, 1, 1, 9);
+      range.setNumberFormat('@');
+      range.setValues([[
+        body.date,
+        body.fromCurrency,
+        Number(body.fromAmount),
+        body.toCurrency,
+        Number(body.toAmount),
+        Number(body.rate) || 0,
+        body.paidBy,
+        id,
+        Number(body.owedAmount) || 0,
+      ]]);
+      return jsonOutput({ success: true, id });
+    }
+
+    if (action === 'updateConversion') {
+      const sheet = getConversionsSheet();
+      if (!sheet) return jsonOutput({ success: false, error: 'Conversions sheet not set up' });
+      if (!body.id) return jsonOutput({ success: false, error: 'Missing id' });
+      const row = findRowById(sheet, CONVERSIONS_ID_COL, body.id);
+      if (row === -1) return jsonOutput({ success: false, error: 'Conversion not found' });
+
+      sheet.getRange(row, 1, 1, 7).setNumberFormat('@');
+      sheet.getRange(row, 1, 1, 7).setValues([[
+        body.date,
+        body.fromCurrency,
+        Number(body.fromAmount),
+        body.toCurrency,
+        Number(body.toAmount),
+        Number(body.rate) || 0,
+        body.paidBy,
+      ]]);
+      sheet.getRange(row, 9, 1, 1).setValue(Number(body.owedAmount) || 0);
+      return jsonOutput({ success: true });
+    }
+
+    if (action === 'deleteConversion') {
+      const sheet = getConversionsSheet();
+      if (!sheet) return jsonOutput({ success: false, error: 'Conversions sheet not set up' });
+      if (!body.id) return jsonOutput({ success: false, error: 'Missing id' });
+      const row = findRowById(sheet, CONVERSIONS_ID_COL, body.id);
+      if (row === -1) return jsonOutput({ success: false, error: 'Conversion not found' });
 
       sheet.deleteRow(row);
       return jsonOutput({ success: true });
